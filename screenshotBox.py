@@ -1,19 +1,8 @@
 from tkinter import *
-import pyscreenshot as ImageGrab
-import pyautogui # mouse events
+from PIL import ImageGrab
+import pyautogui
 from datetime import datetime
-
-# Keeps window on top
-root = Tk()
-root.resizable(0,0)
-root.attributes(toolwindow=1)
-root.title("Snap Screen")
-root.attributes('-topmost', True)
-
-# Frame partitions root window into blocks/containers
-firstCoordsFrame = Frame(root)
-secondCoordsFrame = Frame(root)
-miscFrame = Frame(root)
+import ctypes
 
 def validate_input(value):
     return value.isdigit() or value == ""
@@ -40,6 +29,7 @@ def update_coords():
     firstCoordsFrame.after(100, update_coords)
 
 def submit():
+    today=str(datetime.today().strftime('%Y-%m-%d %H:%M:%S')).replace(":","_").replace(" ","_")
     x1 = int(x1Coord.get() if x1Coord.get() != '' else 0) 
     x2 = int(x2Coord.get() if x2Coord.get() != '' else winWidth) 
     y1 = int(y1Coord.get() if y1Coord.get() != '' else 0) 
@@ -47,17 +37,33 @@ def submit():
 
     if(not validate_coordinates(x1, x2, y1, y2)):
         return
-    root.withdraw()
-    im = ImageGrab.grab(bbox=(x1, y1, x2, y2))
-    root.deiconify()
-    today=str(datetime.today().strftime('%Y-%m-%d %H:%M:%S')).replace(":","_").replace(" ","_")
-    im.save("Snap_"+today+".png")
     
+    # Hides window to take screenshot without this application in the way
+    root.withdraw()
+    screenshot = ImageGrab.grab(bbox=(x1, y1, x2, y2), include_layered_windows=False, all_screens=True)
+    screenshot.save("Snap_"+today+".png", format="PNG")
+    root.deiconify()
 
+# Keeps window on top
+root = Tk()
+root.resizable(0,0)
+root.attributes(toolwindow=1)
+root.title("Snap Screen")
+root.attributes('-topmost', True)
+
+# Get window dimensions
+user32 = ctypes.windll.user32
+winWidth, winHeight = user32.GetSystemMetrics(78), user32.GetSystemMetrics(79)
+
+# Frame partitions root window into blocks/containers
+firstCoordsFrame = Frame(root)
+secondCoordsFrame = Frame(root)
+miscFrame = Frame(root)
+
+# Validation for input
 validate_func = root.register(validate_input)
-winWidth = root.winfo_screenwidth()
-winHeight = root.winfo_screenheight()
 
+# UI components
 x1Label = Label(firstCoordsFrame, text = 'X1:')
 y1Label = Label(firstCoordsFrame, text = 'Y1:')
 x1Coord = StringVar(value=1)
@@ -76,7 +82,6 @@ liveCoords = Label(miscFrame, text = 'X: 0, Y: 0', width=12)
 sub_btn=Button(miscFrame,text = 'Snap', command = submit)
 
 x1, x2, y1, y2 = 1, 1, 500, 500
-
 
 # Organize frames
 firstCoordsFrame.pack(side=TOP)
