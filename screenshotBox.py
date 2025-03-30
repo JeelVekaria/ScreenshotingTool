@@ -3,7 +3,7 @@ from PIL import ImageGrab
 import pyautogui
 from datetime import datetime
 import ctypes
-
+from pathlib import Path
 
 def endApplication(event):
     root.destroy()
@@ -137,9 +137,12 @@ def toggleVisuals():
 
 def screenshot(x1, y1, x2, y2):
     resetLabelBackground()
+    home_dir = str(Path.home()).replace("\\","/")
+    directory = Path(home_dir+"/Pictures/Screenshots_Snap_Screen/")
+    directory.mkdir(parents=True, exist_ok=True)
     today=str(datetime.today().strftime('%Y-%m-%d %H:%M:%S')).replace(":","_").replace(" ","_")
     screenshot = ImageGrab.grab(bbox=(x1 if x1<x2 else x2, y1, x2 if x1<x2 else x1, y2), include_layered_windows=False, all_screens=True)
-    screenshot.save("Snap_"+today+".png", format="PNG")
+    screenshot.save(f"{str(directory)}/Snap_{today}.png", format="PNG")
 
 def updatePlusLocation(position, xCord, yCord):
     createWindowForPlus(position, xCord, yCord)
