@@ -69,6 +69,10 @@ def createBorder():
     borderWindow.geometry("%dx%d+%d+%d" % (w,h,min(x1,x2), min(y1,y2)))
     return
 
+def openFileExplorer():
+    ctypes.windll.shell32.ShellExecuteW(None, "open", str(directory), None, None, 1)
+    return
+
 def infoClicked():
     global showInfo
     if (showInfo):
@@ -137,8 +141,6 @@ def toggleVisuals():
 
 def screenshot(x1, y1, x2, y2):
     resetLabelBackground()
-    home_dir = str(Path.home()).replace("\\","/")
-    directory = Path(home_dir+"/Pictures/Screenshots_Snap_Screen/")
     directory.mkdir(parents=True, exist_ok=True)
     today=str(datetime.today().strftime('%Y-%m-%d %H:%M:%S')).replace(":","_").replace(" ","_")
     screenshot = ImageGrab.grab(bbox=(x1 if x1<x2 else x2, y1, x2 if x1<x2 else x1, y2), include_layered_windows=False, all_screens=True)
@@ -187,7 +189,9 @@ green = "#adf0ad"
 red = "#f0adad"
 toggleVisual=0 # 0 = plus & border, 1 = plus, 2 = none
 startedView=0 # 1 = F1 or F2 clicked once, 2 = both clicked and can display border
-showInfo= False
+showInfo = False
+home_dir = str(Path.home()).replace("\\","/")
+directory = Path(home_dir+"/Pictures/Screenshots_Snap_Screen/")
 
 # Window for plus signs, border, and info
 startWindow = Toplevel()
@@ -213,7 +217,7 @@ borderWindow.withdraw()
 
 infoWindow = Toplevel()
 infoWindow.attributes(toolwindow=1)
-infoWindow.geometry("360x120")
+infoWindow.geometry("360x150")
 infoWindow.overrideredirect(True)
 infoWindow.resizable(0,0)
 infoWindow.withdraw()
@@ -243,16 +247,19 @@ infoText = Text(infoWindow)
 infoText.insert(INSERT, "How to use:\n")
 infoText.insert(INSERT, "<F1> - Starting Corner\n")
 infoText.insert(INSERT, "<F2> - Ending Corner\n")
-infoText.insert(INSERT, "<F3> - Screenshot\n")
+infoText.insert(INSERT, "<F3> or [Snap] button - Screenshot\n")
 infoText.insert(INSERT, "<F4> - Toggle Visual Indicators\n")
 infoText.insert(INSERT, "<Escape> - End Application\n")
+infoText.insert(INSERT, "[?] button - How to use panel \n")
+infoText.insert(INSERT, "[O] button - Directory of saved snaps\n")
 infoText.insert(INSERT, "** Only works when application is focused **")
 infoText.config(state=DISABLED)
 infoText.pack()
 
 liveCoords = Label(miscFrame, text = 'X: 0, Y: 0', width=12)
-snapBtn=Button(snapFrame, text = 'Snap', command = snapClicked,  width=14)
-infoBtn=Button(snapFrame, text = '?', command= infoClicked)
+snapBtn=Button(snapFrame, text = 'Snap', command = snapClicked,  width=13)
+infoBtn=Button(snapFrame, text = '?', command = infoClicked, width=1)
+fileExplorerBtn=Button(snapFrame, text = 'O', command = openFileExplorer, width=1)
 
 # Tracking user input
 x1Coord.trace_add("write", lambda var, index, mode:  updatePlusLocation('start', x1Coord, y1Coord))
@@ -277,6 +284,7 @@ y2Label.pack(side=LEFT)
 y2Entry.pack(side=LEFT)
 
 infoBtn.pack(side=LEFT)
+fileExplorerBtn.pack(side=LEFT)
 snapBtn.pack(side=BOTTOM, fill=X, expand=True)
 liveCoords.pack()
 
