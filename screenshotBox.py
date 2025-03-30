@@ -38,23 +38,36 @@ def updateCoords():
     liveCoords.config(text=f"X: {x}, Y: {y}")
     miscFrame.after(100, updateCoords)
 
-
 # event used to detect keypress change despite not using in code block
 def setStartingCoords(event = Event):
+    global startedView
     x, y = pyautogui.position()
     x1Coord.set(value=x)
     y1Coord.set(value=y)
+    if (startedView == 0):
+        startedView = 1
     createWindowForPlus('start')
 
 def setEndingCoords(event = Event):
+    global startedView
     x, y = pyautogui.position()
     x2Coord.set(value=x)
     y2Coord.set(value=y)
+    if (startedView == 1):
+        startedView = 2
     createWindowForPlus('end')
 
 def createPlusSign(canvas, x, y, size, color):
     canvas.create_line(x - size, y, x + size, y, fill=color, width=2)
     canvas.create_line(x, y - size, x, y + size, fill=color, width=2)
+        
+def createBorder():
+    x1, y1 = int(x1Coord.get()), int(y1Coord.get())
+    x2, y2 = int(x2Coord.get()), int(y2Coord.get())
+    w=abs(x1-x2)
+    h=abs(y1-y2)
+    borderWindow.geometry("%dx%d+%d+%d" % (w,h,min(x1,x2), min(y1,y2)))
+    return
 
 def snapClicked(event=Event):
     # gets coords, if empty set to opposite corners of screen
@@ -73,13 +86,45 @@ def snapClicked(event=Event):
 
 def hideAllWindows():
     root.withdraw()
-    startPlus.withdraw()
-    endPlus.withdraw()
+    startWindow.withdraw()
+    endWindow.withdraw()
+    borderWindow.withdraw()
 
 def showAllWindows():
     root.deiconify()
-    startPlus.deiconify()
-    endPlus.deiconify()
+    startWindow.deiconify()
+    endWindow.deiconify()
+    borderWindow.deiconify()
+    toggleVisuals()
+
+def changeVisualView(event = Event):
+    global toggleVisual
+    if (toggleVisual == 2):
+        toggleVisual = 0
+    else:
+        toggleVisual += 1
+    toggleVisuals()
+
+def toggleVisuals():
+    createBorder()
+    match toggleVisual:
+        case 0:
+            startWindow.deiconify()
+            endWindow.deiconify()
+            if (startedView == 2):
+                borderWindow.deiconify()
+            return
+        case 1:
+            startWindow.deiconify()
+            endWindow.deiconify()
+            borderWindow.withdraw()
+            return
+        case 2:
+            startWindow.withdraw()
+            endWindow.withdraw()
+            borderWindow.withdraw()
+            return
+    return
 
 def screenshot(x1, y1, x2, y2):
     resetLabelBackground()
@@ -99,14 +144,13 @@ def createWindowForPlus(position, newX=None, newY=None):
         x, y = pyautogui.position()
     xPos = x-10
     yPos = y-12
+    toggleVisuals()
     match position:
         case 'start':
-            startPlus.deiconify()
-            startPlus.geometry("30x30+%d+%d" % (xPos, yPos))
+            startWindow.geometry("30x30+%d+%d" % (xPos, yPos))
             return
         case 'end':
-            endPlus.deiconify()
-            endPlus.geometry("30x30+%d+%d" % (xPos, yPos))
+            endWindow.geometry("30x30+%d+%d" % (xPos, yPos))
             return
 
 # Keeps window on top
@@ -120,24 +164,39 @@ root.attributes('-topmost', True)
 # Get window dimensions & color
 user32 = ctypes.windll.user32
 winWidth, winHeight = user32.GetSystemMetrics(78), user32.GetSystemMetrics(79)
-originalBackground = root.cget("background")
 
-# Window for plus signs
-startPlus = Toplevel()
-startPlus.attributes('-transparentcolor', startPlus['bg'])
-startPlus.overrideredirect(True)
-startCanvas = Canvas(startPlus, width=12, height=12)
+# Variables
+originalBackground = root.cget("background")
+x1Coord = StringVar(value=1)
+y1Coord = StringVar(value=1)
+x2Coord = StringVar(value=winWidth)
+y2Coord = StringVar(value=winHeight)
+green = "#adf0ad"
+red = "#f0adad"
+toggleVisual=0 # 0 = plus & border, 1 = plus, 2 = none
+startedView=0 # 1 = F1 or F2 clicked once, 2 = both clicked and can display border
+
+# Window for plus signs and border
+startWindow = Toplevel()
+startWindow.attributes('-transparentcolor', startWindow['bg'])
+startWindow.overrideredirect(True)
+startCanvas = Canvas(startWindow, width=12, height=12)
 startCanvas.pack()
 startCanvas.place(x=1,y=1)
-startPlus.withdraw()
+startWindow.withdraw()
 
-endPlus = Toplevel()
-endPlus.attributes('-transparentcolor', endPlus['bg'])
-endPlus.overrideredirect(True)
-endCanvas = Canvas(endPlus, width=12, height=12)
+endWindow = Toplevel()
+endWindow.attributes('-transparentcolor', endWindow['bg'])
+endWindow.overrideredirect(True)
+endCanvas = Canvas(endWindow, width=12, height=12)
 endCanvas.pack()
 endCanvas.place(x=1,y=1)
-endPlus.withdraw()
+endWindow.withdraw()
+
+borderWindow = Toplevel(highlightthickness=1, highlightbackground='gray', highlightcolor='gray')
+borderWindow.attributes('-transparentcolor', borderWindow['bg'])
+borderWindow.overrideredirect(True)
+borderWindow.withdraw()
 
 # Frame partitions root window into blocks/containers
 firstCoordsFrame = Frame(root)
@@ -150,16 +209,12 @@ validate_func = root.register(validate_input)
 # UI components
 x1Label = Label(firstCoordsFrame, text = 'X1:')
 y1Label = Label(firstCoordsFrame, text = 'Y1:')
-x1Coord = StringVar(value=1)
-y1Coord = StringVar(value=1)
 x1Entry = Entry(firstCoordsFrame, textvariable = x1Coord, width=6, validate="key", validatecommand=(validate_func, "%P"))
 y1Entry = Entry(firstCoordsFrame, textvariable = y1Coord, width=6, validate="key", validatecommand=(validate_func, "%P"))
 
 
 x2Label = Label(secondCoordsFrame, text = 'X2:')
 y2Label = Label(secondCoordsFrame, text = 'Y2:')
-x2Coord = StringVar(value=winWidth)
-y2Coord = StringVar(value=winHeight)
 x2Entry = Entry(secondCoordsFrame, textvariable = x2Coord, width=6, validate="key", validatecommand=(validate_func, "%P"))
 y2Entry = Entry(secondCoordsFrame, textvariable = y2Coord, width=6, validate="key", validatecommand=(validate_func, "%P"))
 
@@ -190,12 +245,13 @@ y2Entry.pack(side=LEFT)
 snapBtn.pack(side=RIGHT)
 liveCoords.pack()
 
-createPlusSign(startCanvas, x=10, y=10, size=4, color="green")
-createPlusSign(endCanvas, x=10, y=10, size=4, color="red")
+createPlusSign(startCanvas, x=10, y=10, size=4, color=green)
+createPlusSign(endCanvas, x=10, y=10, size=4, color=red)
 updateCoords()
 root.bind("<F1>", setStartingCoords)
 root.bind("<F2>", setEndingCoords)
 root.bind("<F3>", snapClicked)
+root.bind("<F4>", changeVisualView)
 root.bind("<Escape>", endApplication)
 
 try:
