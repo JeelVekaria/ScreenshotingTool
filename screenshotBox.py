@@ -87,6 +87,9 @@ def screenshot(x1, y1, x2, y2):
     screenshot = ImageGrab.grab(bbox=(x1 if x1<x2 else x2, y1, x2 if x1<x2 else x1, y2), include_layered_windows=False, all_screens=True)
     screenshot.save("Snap_"+today+".png", format="PNG")
 
+def updatePlusLocation(position, xCord, yCord):
+    createWindowForPlus(position, xCord, yCord)
+
 def createWindowForPlus(position, newX=None, newY=None):
     # sets window to where user inputs number
     if(newX and newY):
@@ -126,7 +129,6 @@ startPlus.overrideredirect(True)
 startCanvas = Canvas(startPlus, width=12, height=12)
 startCanvas.pack()
 startCanvas.place(x=1,y=1)
-createPlusSign(startCanvas, x=10, y=10, size=4, color="green")
 startPlus.withdraw()
 
 endPlus = Toplevel()
@@ -135,7 +137,6 @@ endPlus.overrideredirect(True)
 endCanvas = Canvas(endPlus, width=12, height=12)
 endCanvas.pack()
 endCanvas.place(x=1,y=1)
-createPlusSign(endCanvas, x=10, y=10, size=4, color="red")
 endPlus.withdraw()
 
 # Frame partitions root window into blocks/containers
@@ -145,9 +146,6 @@ miscFrame = Frame(root)
 
 # Validation for input
 validate_func = root.register(validate_input)
-
-def aaa(position, xCord, yCord):
-    createWindowForPlus(position, xCord, yCord)
 
 # UI components
 x1Label = Label(firstCoordsFrame, text = 'X1:')
@@ -169,10 +167,10 @@ liveCoords = Label(miscFrame, text = 'X: 0, Y: 0', width=12)
 snapBtn=Button(miscFrame, text = 'Snap', command = snapClicked)
 
 # Tracking user input
-x1Coord.trace_add("write", lambda var, index, mode:  aaa('start', x1Coord, y1Coord))
-y1Coord.trace_add("write", lambda *args:  aaa('start', x1Coord, y1Coord))
-x2Coord.trace_add("write", lambda *args:  aaa('end', x2Coord, y2Coord))
-y2Coord.trace_add("write", lambda *args:  aaa('end', x2Coord, y2Coord))
+x1Coord.trace_add("write", lambda var, index, mode:  updatePlusLocation('start', x1Coord, y1Coord))
+y1Coord.trace_add("write", lambda *args:  updatePlusLocation('start', x1Coord, y1Coord))
+x2Coord.trace_add("write", lambda *args:  updatePlusLocation('end', x2Coord, y2Coord))
+y2Coord.trace_add("write", lambda *args:  updatePlusLocation('end', x2Coord, y2Coord))
 
 # Organize frames
 firstCoordsFrame.pack(side=TOP)
@@ -192,6 +190,8 @@ y2Entry.pack(side=LEFT)
 snapBtn.pack(side=RIGHT)
 liveCoords.pack()
 
+createPlusSign(startCanvas, x=10, y=10, size=4, color="green")
+createPlusSign(endCanvas, x=10, y=10, size=4, color="red")
 updateCoords()
 root.bind("<F1>", setStartingCoords)
 root.bind("<F2>", setEndingCoords)
