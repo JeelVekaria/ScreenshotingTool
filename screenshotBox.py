@@ -69,6 +69,15 @@ def createBorder():
     borderWindow.geometry("%dx%d+%d+%d" % (w,h,min(x1,x2), min(y1,y2)))
     return
 
+def infoClicked():
+    global showInfo
+    if (showInfo):
+        infoWindow.withdraw()
+    else:
+        infoWindow.deiconify()
+    showInfo = not showInfo
+    return
+
 def snapClicked(event=Event):
     # gets coords, if empty set to opposite corners of screen
     x1 = int(x1Coord.get() if x1Coord.get() != '' else 0) 
@@ -175,8 +184,9 @@ green = "#adf0ad"
 red = "#f0adad"
 toggleVisual=0 # 0 = plus & border, 1 = plus, 2 = none
 startedView=0 # 1 = F1 or F2 clicked once, 2 = both clicked and can display border
+showInfo= False
 
-# Window for plus signs and border
+# Window for plus signs, border, and info
 startWindow = Toplevel()
 startWindow.attributes('-transparentcolor', startWindow['bg'])
 startWindow.overrideredirect(True)
@@ -198,10 +208,18 @@ borderWindow.attributes('-transparentcolor', borderWindow['bg'])
 borderWindow.overrideredirect(True)
 borderWindow.withdraw()
 
+infoWindow = Toplevel()
+infoWindow.attributes(toolwindow=1)
+infoWindow.geometry("360x120")
+infoWindow.overrideredirect(True)
+infoWindow.resizable(0,0)
+infoWindow.withdraw()
+
 # Frame partitions root window into blocks/containers
 firstCoordsFrame = Frame(root)
 secondCoordsFrame = Frame(root)
 miscFrame = Frame(root)
+snapFrame = Frame(root)
 
 # Validation for input
 validate_func = root.register(validate_input)
@@ -218,8 +236,20 @@ y2Label = Label(secondCoordsFrame, text = 'Y2:')
 x2Entry = Entry(secondCoordsFrame, textvariable = x2Coord, width=6, validate="key", validatecommand=(validate_func, "%P"))
 y2Entry = Entry(secondCoordsFrame, textvariable = y2Coord, width=6, validate="key", validatecommand=(validate_func, "%P"))
 
+infoText = Text(infoWindow)
+infoText.insert(INSERT, "How to use:\n")
+infoText.insert(INSERT, "<F1> - Starting Corner\n")
+infoText.insert(INSERT, "<F2> - Ending Corner\n")
+infoText.insert(INSERT, "<F3> - Screenshot\n")
+infoText.insert(INSERT, "<F4> - Toggle Visual Indicators\n")
+infoText.insert(INSERT, "<Escape> - End Application\n")
+infoText.insert(INSERT, "** Only works when application is focused **")
+infoText.config(state=DISABLED)
+infoText.pack()
+
 liveCoords = Label(miscFrame, text = 'X: 0, Y: 0', width=12)
-snapBtn=Button(miscFrame, text = 'Snap', command = snapClicked)
+snapBtn=Button(snapFrame, text = 'Snap', command = snapClicked,  width=14)
+infoBtn=Button(snapFrame, text = '?', command= infoClicked)
 
 # Tracking user input
 x1Coord.trace_add("write", lambda var, index, mode:  updatePlusLocation('start', x1Coord, y1Coord))
@@ -230,7 +260,8 @@ y2Coord.trace_add("write", lambda *args:  updatePlusLocation('end', x2Coord, y2C
 # Organize frames
 firstCoordsFrame.pack(side=TOP)
 secondCoordsFrame.pack()
-miscFrame.pack(side=BOTTOM)
+miscFrame.pack()
+snapFrame.pack()
 
 x1Label.pack(side=LEFT)
 x1Entry.pack(side=LEFT)
@@ -242,7 +273,8 @@ x2Entry.pack(side=LEFT)
 y2Label.pack(side=LEFT)
 y2Entry.pack(side=LEFT)
 
-snapBtn.pack(side=RIGHT)
+infoBtn.pack(side=LEFT)
+snapBtn.pack(side=BOTTOM, fill=X, expand=True)
 liveCoords.pack()
 
 createPlusSign(startCanvas, x=10, y=10, size=4, color=green)
